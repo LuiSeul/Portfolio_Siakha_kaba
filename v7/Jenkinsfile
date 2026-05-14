@@ -1,3 +1,4 @@
+// Pipeline opérationnel
 pipeline {
     agent any
     stages {
