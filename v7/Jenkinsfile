@@ -19,7 +19,7 @@ pipeline {
         stage('Deploiement') {
             steps {
                 bat 'cd v7 && docker compose up -d'
-                bat 'timeout /t 15 /nobreak'
+                sleep(time: 15, unit: 'SECONDS')
             }
         }
         stage('Verification') {
