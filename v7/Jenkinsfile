@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build') {
+            steps {
+                bat 'cd v7 && docker compose build --no-cache'
+            }
+        }
+        stage('Arret') {
+            steps {
+                bat 'cd v7 && docker compose down --remove-orphans || exit 0'
+            }
+        }
+        stage('Deploiement') {
+            steps {
+                bat 'cd v7 && docker compose up -d'
+                bat 'timeout /t 15 /nobreak'
+            }
+        }
+        stage('Verification') {
+            steps {
+                bat 'cd v7 && docker compose ps'
+            }
+        }
+    }
+    post {
+        success {
+            echo 'DEPLOIEMENT REUSSI - http://localhost:8080'
+        }
+        failure {
+            bat 'cd v7 && docker compose down || exit 0'
+        }
+        always {
+            bat 'cd v7 && docker compose ps || exit 0'
+        }
+    }
+}
