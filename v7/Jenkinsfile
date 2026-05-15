@@ -57,7 +57,7 @@ pipeline {
                 subject: "SUCCESS - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "<h2>Deploiement reussi</h2><p><b>Projet :</b> ${env.JOB_NAME}</p><p><b>Build :</b> ${env.BUILD_NUMBER}</p><p><b>Statut :</b> SUCCESS</p><p><b>Lien :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p><p>Le portfolio a ete deploye avec succes sur <a href='http://localhost:8080'>http://localhost:8080</a>.</p>",
                 mimeType: 'text/html',
-                to: 'siakha.kaba@gmail.com'
+                to: 'siakha.kaba94@gmail.com'
             )
         }
 
@@ -69,7 +69,7 @@ pipeline {
                 subject: "FAILURE - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "<h2>Deploiement echoue</h2><p><b>Projet :</b> ${env.JOB_NAME}</p><p><b>Build :</b> ${env.BUILD_NUMBER}</p><p><b>Statut :</b> FAILURE</p><p><b>Logs :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p><p>Une erreur est survenue pendant le pipeline.</p>",
                 mimeType: 'text/html',
-                to: 'siakha.kaba@gmail.com'
+                to: 'siakha.kaba94@gmail.com'
             )
         }
 
