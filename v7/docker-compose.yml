@@ -19,7 +19,6 @@ services:
     container_name: portfolio_backend
     ports:
       - "3001:3001"
-    # PAS de volumes : le code est dans l'image, pas de bind-mount qui depend du workspace Jenkins
     environment:
       - PORT=3001
       - MONGO_URI=mongodb://mongo:27017/portfolio
@@ -30,7 +29,7 @@ services:
       - mongo
     restart: unless-stopped
 
-  # ── Frontend React / Vite (expose sur 8080 cote hote) ──
+  # ── Frontend React / Vite (port 8080) ──────────────────
   frontend:
     build:
       context: ./frontend
@@ -39,7 +38,6 @@ services:
     container_name: portfolio_frontend
     ports:
       - "8080:8080"
-    # PAS de volumes : le code est dans l'image, pas de bind-mount qui depend du workspace Jenkins
     environment:
       - VITE_API_URL=http://localhost:3001
     depends_on:
