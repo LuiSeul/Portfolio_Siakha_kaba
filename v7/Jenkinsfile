@@ -1,39 +1,44 @@
-// Pipeline opérationnel
+// Pipeline operationnel
 pipeline {
     agent any
+
+    environment {
+        COMPOSE_FILE = 'docker-compose.yml'
+    }
+
     stages {
- 
+
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
- 
+
         stage('Preparation env') {
             steps {
                 bat 'copy "C:\\secrets\\backend.env" "%WORKSPACE%\\v7\\backend\\.env"'
             }
         }
- 
+
         stage('Build') {
             steps {
                 bat "cd v7 && docker compose -f %COMPOSE_FILE% build --no-cache"
             }
         }
- 
+
         stage('Arret') {
             steps {
                 bat "cd v7 && docker compose -f %COMPOSE_FILE% down --remove-orphans || exit 0"
             }
         }
- 
+
         stage('Deploiement') {
             steps {
                 bat "cd v7 && docker compose -f %COMPOSE_FILE% up -d"
                 sleep(time: 15, unit: 'SECONDS')
             }
         }
- 
+
         stage('Verification') {
             steps {
                 bat "cd v7 && docker compose -f %COMPOSE_FILE% ps"
@@ -41,22 +46,21 @@ pipeline {
                 bat "cd v7 && docker compose -f %COMPOSE_FILE% logs --tail=30 backend"
             }
         }
- 
+
     }
- 
-    // ── UN SEUL BLOC POST ────────────────────────────────────────
+
     post {
- 
+
         success {
             echo "Pipeline reussi - Portfolio deploye"
             emailext(
                 subject: "SUCCESS - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<h2>Deploiement reussi</h2><p><b>Projet :</b> ${env.JOB_NAME}</p><p><b>Build :</b> ${env.BUILD_NUMBER}</p><p><b>Statut :</b> SUCCESS</p><p><b>Lien :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p><p>Le portfolio a ete deploye avec succes sur <a href='http://localhost'>http://localhost</a>.</p>",
+                body: "<h2>Deploiement reussi</h2><p><b>Projet :</b> ${env.JOB_NAME}</p><p><b>Build :</b> ${env.BUILD_NUMBER}</p><p><b>Statut :</b> SUCCESS</p><p><b>Lien :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p><p>Le portfolio a ete deploye avec succes sur <a href='http://localhost:8080'>http://localhost:8080</a>.</p>",
                 mimeType: 'text/html',
                 to: 'siakha.kaba@gmail.com'
             )
         }
- 
+
         failure {
             echo "Pipeline echoue - consulte les logs"
             bat "cd v7 && docker compose -f %COMPOSE_FILE% logs --tail=100 || exit 0"
@@ -68,12 +72,12 @@ pipeline {
                 to: 'siakha.kaba@gmail.com'
             )
         }
- 
+
         always {
             echo "Nettoyage du workspace..."
             bat "cd v7 && docker compose -f %COMPOSE_FILE% ps || exit 0"
             cleanWs()
         }
- 
+
     }
 }
