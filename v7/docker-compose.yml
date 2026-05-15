@@ -47,8 +47,8 @@ services:
     volumes:
       - ./frontend:/app         # hot reload
       - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:3001
+    #environment:
+    #  - VITE_API_URL=http://localhost:3001
     depends_on:
       - backend
     restart: unless-stopped
