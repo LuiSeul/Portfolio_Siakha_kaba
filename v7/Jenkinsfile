@@ -1,4 +1,3 @@
-Copier
 // Pipeline opérationnel !!!!
 pipeline {
     agent any
@@ -25,6 +24,7 @@ pipeline {
  
         stage('Deploiement') {
             steps {
+                bat 'copy "C:\\secrets\\backend.env" "%WORKSPACE%\\v7\\backend\\.env"'
                 bat 'cd v7 && docker compose up -d'
                 sleep(time: 15, unit: 'SECONDS')
             }
