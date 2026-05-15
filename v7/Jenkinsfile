@@ -1,9 +1,11 @@
-// Pipeline operationnel
+// Pipeline complet : Build + Push Docker Hub + Deploiement
 pipeline {
     agent any
 
     environment {
-        COMPOSE_FILE = 'docker-compose.yml'
+        COMPOSE_FILE   = 'docker-compose.yml'
+        DOCKERHUB_USER = 'siakhakaba19'
+        IMAGE_TAG      = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -22,7 +24,40 @@ pipeline {
 
         stage('Build') {
             steps {
+                echo "Construction des images Docker..."
                 bat "cd v7 && docker compose -f %COMPOSE_FILE% build --no-cache"
+            }
+        }
+
+        stage('Tag images') {
+            steps {
+                echo "Tag des images pour Docker Hub..."
+                bat """
+                    docker tag v7-backend %DOCKERHUB_USER%/portfolio-backend:%IMAGE_TAG%
+                    docker tag v7-backend %DOCKERHUB_USER%/portfolio-backend:latest
+                    docker tag v7-frontend %DOCKERHUB_USER%/portfolio-frontend:%IMAGE_TAG%
+                    docker tag v7-frontend %DOCKERHUB_USER%/portfolio-frontend:latest
+                """
+            }
+        }
+
+        stage('Push Docker Hub') {
+            steps {
+                echo "Connexion et push vers Docker Hub..."
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat """
+                        echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                        docker push %DOCKERHUB_USER%/portfolio-backend:%IMAGE_TAG%
+                        docker push %DOCKERHUB_USER%/portfolio-backend:latest
+                        docker push %DOCKERHUB_USER%/portfolio-frontend:%IMAGE_TAG%
+                        docker push %DOCKERHUB_USER%/portfolio-frontend:latest
+                        docker logout
+                    """
+                }
             }
         }
 
@@ -52,12 +87,25 @@ pipeline {
     post {
 
         success {
-            echo "Pipeline reussi - Portfolio deploye"
+            echo "Pipeline reussi - Portfolio deploye et images publiees sur Docker Hub"
             emailext(
                 subject: "SUCCESS - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<h2>Deploiement reussi</h2><p><b>Projet :</b> ${env.JOB_NAME}</p><p><b>Build :</b> ${env.BUILD_NUMBER}</p><p><b>Statut :</b> SUCCESS</p><p><b>Lien :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p><p>Le portfolio a ete deploye avec succes sur <a href='http://localhost:8080'>http://localhost:8080</a>.</p>",
+                body: """<h2 style="color:green;">Deploiement reussi</h2>
+                <p><b>Projet :</b> ${env.JOB_NAME}</p>
+                <p><b>Build :</b> ${env.BUILD_NUMBER}</p>
+                <p><b>Statut :</b> SUCCESS</p>
+                <p><b>Lien Jenkins :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>
+                <p><b>Application :</b> <a href='http://localhost:8080'>http://localhost:8080</a></p>
+                <hr>
+                <h3>Images publiees sur Docker Hub :</h3>
+                <ul>
+                    <li><a href='https://hub.docker.com/r/siakhakaba19/portfolio-backend'>siakhakaba19/portfolio-backend:${env.BUILD_NUMBER}</a></li>
+                    <li><a href='https://hub.docker.com/r/siakhakaba19/portfolio-frontend'>siakhakaba19/portfolio-frontend:${env.BUILD_NUMBER}</a></li>
+                </ul>""",
                 mimeType: 'text/html',
-                to: 'siakha.kaba94@gmail.com'
+                to: 'siakha.kaba94@gmail.com',
+                from: 'siakha.kaba94@gmail.com',
+                replyTo: 'siakha.kaba94@gmail.com'
             )
         }
 
@@ -65,11 +113,19 @@ pipeline {
             echo "Pipeline echoue - consulte les logs"
             bat "cd v7 && docker compose -f %COMPOSE_FILE% logs --tail=100 || exit 0"
             bat "cd v7 && docker compose -f %COMPOSE_FILE% down || exit 0"
+            bat "docker logout || exit 0"
             emailext(
                 subject: "FAILURE - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "<h2>Deploiement echoue</h2><p><b>Projet :</b> ${env.JOB_NAME}</p><p><b>Build :</b> ${env.BUILD_NUMBER}</p><p><b>Statut :</b> FAILURE</p><p><b>Logs :</b> <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p><p>Une erreur est survenue pendant le pipeline.</p>",
+                body: """<h2 style="color:red;">Deploiement echoue</h2>
+                <p><b>Projet :</b> ${env.JOB_NAME}</p>
+                <p><b>Build :</b> ${env.BUILD_NUMBER}</p>
+                <p><b>Statut :</b> FAILURE</p>
+                <p><b>Logs :</b> <a href='${env.BUILD_URL}console'>${env.BUILD_URL}console</a></p>
+                <p>Une erreur est survenue pendant le pipeline. Consulte les logs Jenkins pour plus de details.</p>""",
                 mimeType: 'text/html',
-                to: 'siakha.kaba94@gmail.com'
+                to: 'siakha.kaba94@gmail.com',
+                from: 'siakha.kaba94@gmail.com',
+                replyTo: 'siakha.kaba94@gmail.com'
             )
         }
 
