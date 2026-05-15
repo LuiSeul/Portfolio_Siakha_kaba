@@ -1,4 +1,4 @@
-// Pipeline opérationnel - Version PRODUCTION
+// Pipeline opérationnel
 pipeline {
     agent any
  
