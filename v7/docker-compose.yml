@@ -21,12 +21,13 @@ services:
       - "3001:3001"
     environment:
       - PORT=3001
-      - MONGO_URI=mongodb://mongo:27017/portfolio
+      #- MONGO_URI=mongodb://mongo:27017/portfolio
+      - MONGO_URI=mongodb://host.docker.internal:27017/portfolio
       - NODE_ENV=development
     env_file:
       - ./backend/.env
-    depends_on:
-      - mongo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   # ── Frontend React / Vite (port 8080) ──────────────────
