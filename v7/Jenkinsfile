@@ -31,33 +31,38 @@ pipeline {
 
         stage('Tag images') {
             steps {
-                echo "Tag des images pour Docker Hub (repo unique : %DOCKERHUB_REPO%)..."
-                bat """
-                    docker tag v7-backend  %DOCKERHUB_REPO%:backend-%BUILD_TAG%
-                    docker tag v7-backend  %DOCKERHUB_REPO%:backend-latest
-                    docker tag v7-frontend %DOCKERHUB_REPO%:frontend-%BUILD_TAG%
-                    docker tag v7-frontend %DOCKERHUB_REPO%:frontend-latest
-                """
+                echo "Tag des images pour Docker Hub..."
+                bat "docker tag v7-backend  %DOCKERHUB_REPO%:backend-%BUILD_TAG%"
+                bat "docker tag v7-backend  %DOCKERHUB_REPO%:backend-latest"
+                bat "docker tag v7-frontend %DOCKERHUB_REPO%:frontend-%BUILD_TAG%"
+                bat "docker tag v7-frontend %DOCKERHUB_REPO%:frontend-latest"
             }
         }
 
-        stage('Push Docker Hub') {
+        stage('Login Docker Hub') {
             steps {
-                echo "Connexion et push vers Docker Hub..."
+                echo "Connexion a Docker Hub..."
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    bat """
-                        echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                        docker push %DOCKERHUB_REPO%:backend-%BUILD_TAG%
-                        docker push %DOCKERHUB_REPO%:backend-latest
-                        docker push %DOCKERHUB_REPO%:frontend-%BUILD_TAG%
-                        docker push %DOCKERHUB_REPO%:frontend-latest
-                        docker logout
-                    """
+                    // Login en commande separee : si echec, le stage echoue immediatement
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
                 }
+            }
+        }
+
+        stage('Push Docker Hub') {
+            steps {
+                echo "Push des images vers Docker Hub..."
+                // 4 commandes separees : si une echoue, le pipeline s'arrete
+                bat "docker push %DOCKERHUB_REPO%:backend-%BUILD_TAG%"
+                bat "docker push %DOCKERHUB_REPO%:backend-latest"
+                bat "docker push %DOCKERHUB_REPO%:frontend-%BUILD_TAG%"
+                bat "docker push %DOCKERHUB_REPO%:frontend-latest"
+                echo "Toutes les images ont ete pushees avec succes !"
+                bat "docker logout"
             }
         }
 
@@ -106,9 +111,9 @@ pipeline {
                     <li>siakhakaba19/portfolio:frontend-latest</li>
                 </ul>""",
                 mimeType: 'text/html',
-                to: 'siakha.kaba94@gmail.com',
-                from: 'siakha.kaba94@gmail.com',
-                replyTo: 'siakha.kaba94@gmail.com'
+                to: 'siakha.kaba@gmail.com',
+                from: 'siakha.kaba@gmail.com',
+                replyTo: 'siakha.kaba@gmail.com'
             )
         }
 
@@ -123,12 +128,11 @@ pipeline {
                 <p><b>Projet :</b> ${env.JOB_NAME}</p>
                 <p><b>Build :</b> ${env.BUILD_NUMBER}</p>
                 <p><b>Statut :</b> FAILURE</p>
-                <p><b>Logs :</b> <a href='${env.BUILD_URL}console'>${env.BUILD_URL}console</a></p>
-                <p>Une erreur est survenue pendant le pipeline. Consulte les logs Jenkins pour plus de details.</p>""",
+                <p><b>Logs :</b> <a href='${env.BUILD_URL}console'>${env.BUILD_URL}console</a></p>""",
                 mimeType: 'text/html',
-                to: 'siakha.kaba94@gmail.com',
-                from: 'siakha.kaba95@gmail.com',
-                replyTo: 'siakha.kaba94@gmail.com'
+                to: 'siakha.kaba@gmail.com',
+                from: 'siakha.kaba@gmail.com',
+                replyTo: 'siakha.kaba@gmail.com'
             )
         }
 
